@@ -1,19 +1,62 @@
-import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { fetchContacts } from './redux/contactsOps';
-import ContactList from './components/ContactList/ContactList';
+import React, { useState } from 'react';
+import './App.css';
 
-export default function App() {
-  const dispatch = useDispatch();
+function App() {
+  const [items, setItems] = useState([]);
+  const [newItem, setNewItem] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    dispatch(fetchContacts());
-  }, [dispatch]);
+  // Ekleme metodu
+  const handleAddItem = () => {
+    const trimmed = newItem.trim();
+    if (trimmed) {
+      setItems([...items, { id: Date.now(), text: trimmed }]);
+      setNewItem('');
+    }
+  };
+
+  // Silme metodu
+  const handleDeleteItem = (id) => {
+    setItems(items.filter(item => item.id !== id));
+  };
+
+  // Arama sonuçları
+  const filteredItems = items.filter(item =>
+    item.text.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div>
-      <h1>Kişi Rehberi</h1>
-      <ContactList />
+    <div className="app-container">
+      <h1>Item Manager</h1>
+      <div className="controls">
+        <input
+          type="text"
+          placeholder="Yeni öğe ekle"
+          value={newItem}
+          onChange={e => setNewItem(e.target.value)}
+        />
+        <button onClick={handleAddItem}>Ekle</button>
+      </div>
+
+      <div className="controls">
+        <input
+          type="text"
+          placeholder="Arama yap"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      <ul className="item-list">
+        {filteredItems.map(item => (
+          <li key={item.id} className="item">
+            <span>{item.text}</span>
+            <button onClick={() => handleDeleteItem(item.id)}>Sil</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
+
+export default App;
