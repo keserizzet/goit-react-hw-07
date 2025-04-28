@@ -15,7 +15,7 @@ function App() {
     }
   };
 
-  // Silme metod
+  // Silme meto
   const handleDeleteItem = (id) => {
     setItems(items.filter(item => item.id !== id));
   };
