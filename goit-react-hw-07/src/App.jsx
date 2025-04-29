@@ -1,57 +1,120 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  const [items, setItems] = useState([]);
-  const [newItem, setNewItem] = useState('');
+  // Başlangıçta localStorage'dan yükle
+  const [entries, setEntries] = useState(() => {
+    const saved = localStorage.getItem('entries');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [editId, setEditId] = useState(null);
 
-  // Ekleme metodu
-  const handleAddItem = () => {
-    const trimmed = newItem.trim();
-    if (trimmed) {
-      setItems([...items, { id: Date.now(), text: trimmed }]);
-      setNewItem('');
+  // entries değiştiğinde localStorage'a kaydet
+  useEffect(() => {
+    localStorage.setItem('entries', JSON.stringify(entries));
+  }, [entries]);
+
+  // Ekleme ve güncelleme metodu
+  const handleAddOrUpdate = () => {
+    const trimmedName = name.trim();
+    const trimmedPhone = phone.trim();
+    if (!trimmedName || !trimmedPhone) return;
+
+    if (editId) {
+      setEntries(
+        entries.map(entry =>
+          entry.id === editId
+            ? { ...entry, name: trimmedName, phone: trimmedPhone }
+            : entry
+        )
+      );
+      setEditId(null);
+    } else {
+      setEntries([
+        ...entries,
+        { id: Date.now(), name: trimmedName, phone: trimmedPhone }
+      ]);
+    }
+
+    setName('');
+    setPhone('');
+  };
+
+  // Düzenleme metodu
+  const handleEdit = (id) => {
+    const entry = entries.find(e => e.id === id);
+    if (entry) {
+      setName(entry.name);
+      setPhone(entry.phone);
+      setEditId(id);
     }
   };
 
-  // Silme meto
-  const handleDeleteItem = (id) => {
-    setItems(items.filter(item => item.id !== id));
+  // Silme metodu
+  const handleDelete = (id) => {
+    setEntries(entries.filter(e => e.id !== id));
+    if (editId === id) {
+      setEditId(null);
+      setName('');
+      setPhone('');
+    }
   };
 
-  // Arama sonuçları
-  const filteredItems = items.filter(item =>
-    item.text.toLowerCase().includes(searchTerm.toLowerCase())
+  // Arama filtresi (isim veya telefon)
+  const filteredEntries = entries.filter(entry =>
+    entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    entry.phone.includes(searchTerm)
   );
 
   return (
     <div className="app-container">
-      <h1>Item Manager</h1>
+      <h1>Rehber Uygulaması</h1>
+
       <div className="controls">
         <input
           type="text"
-          placeholder="Yeni öğe ekle"
-          value={newItem}
-          onChange={e => setNewItem(e.target.value)}
+          placeholder="İsim"
+          value={name}
+          onChange={e => setName(e.target.value)}
         />
-        <button onClick={handleAddItem}>Ekle</button>
+        <input
+          type="text"
+          placeholder="Telefon Numarası"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+        />
+        <button onClick={handleAddOrUpdate}>
+          {editId ? 'Güncelle' : 'Ekle'}
+        </button>
+        {editId && (
+          <button onClick={() => {
+            setEditId(null);
+            setName('');
+            setPhone('');
+          }}>
+            İptal
+          </button>
+        )}
       </div>
 
       <div className="controls">
         <input
           type="text"
-          placeholder="Arama yap"
+          placeholder="Ara"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
         />
       </div>
 
       <ul className="item-list">
-        {filteredItems.map(item => (
-          <li key={item.id} className="item">
-            <span>{item.text}</span>
-            <button onClick={() => handleDeleteItem(item.id)}>Sil</button>
+        {filteredEntries.map(entry => (
+          <li key={entry.id} className="item">
+            <span>{entry.name} - {entry.phone}</span>
+            <button onClick={() => handleEdit(entry.id)}>Düzenle</button>
+            <button onClick={() => handleDelete(entry.id)}>Sil</button>
           </li>
         ))}
       </ul>
